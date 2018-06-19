@@ -10,13 +10,19 @@ from std_msgs.msg import Int32, Float32, String, Float64MultiArray, MultiArrayLa
 import cv2
 import numpy as np
 from scipy.misc import imresize
+from cv_bridge import CvBridge, CvBridgeError
+from sensor_msgs.msg import Image
+import IPython
+import imageio
+#latest_data = None
 
 def talker(camera_serial_port):
 	camera_serial_port = camera_serial_port
-	pub = rospy.Publisher("live_camera_image", camera_message, queue_size=10)
+	pub = rospy.Publisher("live_camera_image", Image, queue_size=1)
 	rospy.init_node("camera_publisher")
 
-	rate = rospy.Rate(10)
+	bridge = CvBridge()
+	#rate = rospy.Rate(10)
 
 	cap = cv2.VideoCapture(int(camera_serial_port[-1]))
 	cap.release()
@@ -24,34 +30,36 @@ def talker(camera_serial_port):
 	while not rospy.is_shutdown():
 		cap = cv2.VideoCapture(int(camera_serial_port[-1]))
 		ret, frame = cap.read()
-
-		frame_cropped = frame[:, 80:560, :]
-		img = imresize(frame_cropped, (227, 227, 3))
-		img = np.swapaxes(img, 0, 1)
-
-		#training_mean= [123.68, 116.779, 103.939] 
-		#img = img - training_mean 
-		#img[:, :, 0], img[:, :, 2] = img[:, :, 2], img[:, :, 0]
-
 		cap.release()
 
-		#img = np.ones((2,2,3)).tolist()
-		#img = np.ones((2, 1)).tolist()
-		#img = [1.0, 1.0]
-		data = camera_message()
-		data.list = img.flatten().tolist()
+		#print(type(frame))
+		try:
+			data = bridge.cv2_to_imgmsg(frame, "bgr8")
+		except CvBridgeError as e:
+			print(e)
 
+		# frame_cropped = frame[:, 80:560, :]
+		# img = imresize(frame_cropped, (227, 227, 3))
+		# img = np.swapaxes(img, 0, 1)
+
+		# data = camera_message()
+		# data.list = img.flatten().tolist()
+
+		#global latest_data 
+		#latest_data = frame
 		pub.publish(data)
-		#rospy.loginfo(data)
-		rospy.loginfo(img)
-		rate.sleep()
+		rospy.loginfo("published")
+		#rospy.loginfo(img)
+		#rate.sleep()
 
 
 if __name__=='__main__':
-	camera_serial_port = "/dev/video1"
+	camera_serial_port = "/dev/video2"
 	try:
 		talker(camera_serial_port)
+		#IPython.embed()
 	except rospy.ROSInterruptException:
+		#IPython.embed()
 		pass
 
 
@@ -93,7 +101,7 @@ Publisher example:
 	 a = numpy.array([1.0, 2.1, 3.2, 4.3, 5.4, 6.5], dtype=numpy.float32)
 	 pub.publish(a)"""
 
-	 		#pub.publish(img)
+			#pub.publish(img)
 
 """
 MultiArrayLayout  layout        # specification of data layout

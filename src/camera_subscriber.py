@@ -9,12 +9,19 @@ from live_camera.msg import camera_message
 import numpy as np
 import cv2
 from rospy.exceptions import ROSException
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
+
+#latest_data = None
 
 def callback(data):
-    numpy_array = np.reshape(np.asarray(data.list), (227, 227, 3))
+    #numpy_array = np.reshape(np.asarray(data.list), (227, 227, 3))
+    #numpy_array = bridge.imgmsg_to_cv2(data, desired_encoding="rgb8")
     #rospy.loginfo(rospy.get_caller_id() + "I heard ", numpy_array)
-    cv2.imwrite("frame.jpg", numpy_array)
-    rospy.loginfo(numpy_array)
+    #cv2.imwrite("frame.jpg", numpy_array)
+    
+    #latest_data = numpy_array
+    rospy.loginfo(data)
     #sub.unregister()
 
 def listener(): 
@@ -23,21 +30,26 @@ def listener():
     # anonymous=True flag means that rospy will choose a unique
     # name for our 'listener' node so that multiple listeners can
     # run simultaneously.
-    # rospy.init_node('listener', anonymous=True) 
-    # sub = rospy.Subscriber("live_camera_image", camera_message, callback, sub)
-    # spin() simply keeps python from exiting until this node is stopped
-    #rospy.spin()
-    rospy.init_node('listener', anonymous = True)
-    rate = rospy.Rate(5)
-    while not rospy.is_shutdown():
-        try:
-            data = rospy.wait_for_message("live_camera_image", camera_message, timeout=1)
-            print(data)
-        except ROSException:
-            print("timeout exceeded")
-            #print(data)
-        rate.sleep()
+    rospy.init_node('listener', anonymous=True) 
+    sub = rospy.Subscriber("live_camera_image", Image, callback)
+    #while not rospy.is_shutdown():
+        
+    #spin() simply keeps python from exiting until this node is stopped
+    rospy.spin()
+    
+    # rospy.init_node('listener', anonymous = True)
+    # rate = rospy.Rate(5)
+    # while not rospy.is_shutdown():
+    #     try:
+    #         # 0.07 is good for frequency
+    #         data = rospy.wait_for_message("live_camera_image", camera_message, timeout=0.06)
+    #         print(data)
+    #     except ROSException:
+    #         print("timeout exceeded")
+    #         #print(data)
+    #     rate.sleep()
 if __name__ == '__main__':
+    #bridge = CvBridge()
     listener()
 
 """
